@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Create a short, easy-to-share URL.">
+    <title>Tiny URL</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <script src="/static/app.js" defer></script>
+  </head>
+  <body>
+    <main class="shell">
+      <section class="card" aria-labelledby="page-title">
+        <header class="intro">
+          <span class="eyebrow">Tiny URL</span>
+          <h1 id="page-title">Make long links feel lighter.</h1>
+          <p>Paste a URL, choose an alias if you like, and get a link ready to share.</p>
+        </header>
+
+        <form id="link-form" novalidate>
+          <div class="field">
+            <label for="url">Long URL</label>
+            <input
+              id="url"
+              name="url"
+              type="url"
+              inputmode="url"
+              autocomplete="url"
+              placeholder="https://example.com/a/very/long/link"
+              maxlength="2048"
+              required
+              aria-describedby="url-hint"
+            >
+            <p class="hint" id="url-hint">Use a complete address beginning with http:// or https://.</p>
+          </div>
+
+          <div class="field">
+            <label for="custom-alias">
+              Custom alias <span class="optional">Optional</span>
+            </label>
+            <div class="alias-input">
+              <span aria-hidden="true">/</span>
+              <input
+                id="custom-alias"
+                name="custom_alias"
+                type="text"
+                autocomplete="off"
+                autocapitalize="none"
+                spellcheck="false"
+                placeholder="my-link"
+                minlength="3"
+                maxlength="32"
+                pattern="[a-z0-9](?:[a-z0-9-]{1,30}[a-z0-9])?"
+                aria-describedby="alias-hint"
+              >
+            </div>
+            <p class="hint" id="alias-hint">3–32 lowercase letters, numbers, or hyphens.</p>
+          </div>
+
+          <button id="submit-button" type="submit">
+            <span class="button-label">Shorten link</span>
+            <span class="spinner" aria-hidden="true"></span>
+          </button>
+        </form>
+
+        <p id="status" class="status" role="status" aria-live="polite"></p>
+
+        <section id="success-panel" class="success-panel" aria-labelledby="success-title" hidden>
+          <div>
+            <p class="result-label" id="success-title">Your short link</p>
+            <a id="short-url" class="short-url" href="#" target="_blank" rel="noopener noreferrer"></a>
+          </div>
+          <div class="actions">
+            <button id="copy-button" class="secondary" type="button">Copy</button>
+            <a id="open-link" class="open-button" href="#" target="_blank" rel="noopener noreferrer">Open</a>
+          </div>
+        </section>
+      </section>
+    </main>
+  </body>
+</html>

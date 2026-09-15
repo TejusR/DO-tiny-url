@@ -1,8 +1,10 @@
 import logging
+from pathlib import Path
 from typing import Annotated
 
 from fastapi import Depends, FastAPI, HTTPException, Response, status
-from fastapi.responses import RedirectResponse
+from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy import func, select, text, update
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session
@@ -15,6 +17,7 @@ from app.schemas import ShortLinkCreate, ShortLinkResponse
 
 logger = logging.getLogger(__name__)
 MAX_ALIAS_ATTEMPTS = 5
+STATIC_DIR = Path(__file__).parent / "static"
 
 
 def _response_for(link: ShortLink, public_base_url: str) -> ShortLinkResponse:
@@ -35,6 +38,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     application = FastAPI(title=resolved_settings.app_name)
     application.state.database_engine = create_database_engine(resolved_settings)
     application.state.session_factory = create_session_factory(application.state.database_engine)
+    application.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
+    @application.get("/", include_in_schema=False)
+    def index() -> FileResponse:
+        return FileResponse(STATIC_DIR / "index.html")
 
     @application.get("/health")
     def health() -> dict[str, str]:
