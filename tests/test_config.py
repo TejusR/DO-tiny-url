@@ -28,3 +28,14 @@ def test_psycopg_database_url_is_unchanged() -> None:
 def test_non_postgresql_database_url_is_rejected(database_url: str) -> None:
     with pytest.raises(ValidationError, match="DATABASE_URL"):
         Settings(database_url=database_url)
+
+
+def test_public_base_url_is_normalized() -> None:
+    settings = Settings(public_base_url="https://short.example/base/")
+
+    assert settings.public_base_url == "https://short.example/base"
+
+
+def test_production_requires_non_local_public_base_url() -> None:
+    with pytest.raises(ValidationError, match="PUBLIC_BASE_URL"):
+        Settings(environment="production")

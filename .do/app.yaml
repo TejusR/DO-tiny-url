@@ -7,14 +7,14 @@ alerts:
 databases:
   - name: tiny-url-db
     engine: PG
-    production: true
-    cluster_name: tiny-url-db
+    version: "17"
+    production: false
 
 envs:
   - key: DATABASE_URL
     scope: RUN_AND_BUILD_TIME
     type: GENERAL
-    value: ${tiny-url-db.DATABASE_PRIVATE_URL}
+    value: ${tiny-url-db.DATABASE_URL}
 
 ingress:
   rules:
