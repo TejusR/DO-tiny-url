@@ -12,47 +12,18 @@ PostgreSQL.
 
 ```mermaid
 flowchart LR
-    User[Browser or API client]
+    Client[Browser or API client]
     App[FastAPI application]
-    UI[Static HTML, CSS, and JavaScript]
-    Validation[Pydantic request validation]
-    Alias[Custom alias or random alias generator]
-    ORM[SQLAlchemy session]
-    DB[(PostgreSQL<br/>short_links)]
-    Destination[Original destination URL]
+    DB[(PostgreSQL)]
+    Destination[Destination website]
 
-    User -->|GET /| App
-    App --> UI
-    UI --> User
+    Client -->|Create or inspect a short link| App
+    App <-->|Store or retrieve link data| DB
+    App -->|Link details| Client
 
-    User -->|POST /api/v1/links| App
-    App --> Validation
-    Validation --> Alias
-    Alias -->|INSERT link; retry generated collisions| ORM
-    ORM --> DB
-    DB -->|Stored link metadata| ORM
-    ORM -->|201 and short URL| App
-    App --> User
-
-    User -->|GET /api/v1/links/:alias| App
-    App -->|SELECT metadata| ORM
-    ORM --> DB
-    DB -->|URL and analytics| ORM
-    ORM --> App
-    App -->|200 link metadata| User
-
-    User -->|GET /:alias| App
-    App -->|Atomic UPDATE count and timestamp<br/>RETURNING original URL| ORM
-    ORM --> DB
-    DB -->|Original URL| ORM
-    ORM --> App
-    App -->|307, Cache-Control: no-store| User
-    User --> Destination
-
-    User -->|GET /health| App
-    User -->|GET /ready| App
-    App -->|SELECT 1 for readiness| ORM
-    ORM --> DB
+    Client -->|Open short URL| App
+    App -->|Update click analytics| DB
+    App -->|307 redirect| Destination
 ```
 
 Key implementation details:
@@ -155,4 +126,3 @@ uv run pytest
 ```
 
 `alembic check` verifies that the SQLAlchemy models and committed migrations remain consistent.
-
