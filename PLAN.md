@@ -2,7 +2,7 @@
 
 ## Summary
 
-Build one stateless FastAPI service backed by DigitalOcean Managed PostgreSQL. Use synchronous SQLAlchemy 2.x with Psycopg 3, Alembic migrations, Pydantic validation, pytest integration tests, and `uv` for locked dependencies.
+Build one stateless FastAPI service backed by DigitalOcean Managed PostgreSQL. Use synchronous SQLAlchemy 2.x with Psycopg 3, Alembic migrations, Pydantic validation, pytest integration tests, and `uv` for locked dependencies. Serve a minimal vanilla HTML/CSS/JavaScript interface from the same application.
 
 Keep the architecture intentionally small: no repository classes, Redis, background workers, Docker image, authentication, or rate limiting. Database uniqueness makes multiple API instances safe.
 
@@ -12,6 +12,7 @@ Keep the architecture intentionally small: no repository classes, Redis, backgro
 
 | Method | Route | Behavior |
 |---|---|---|
+| `GET` | `/` | Serves the minimal link-creation interface |
 | `GET` | `/health` | Liveness check; returns `200 {"status":"ok"}` without querying PostgreSQL |
 | `GET` | `/ready` | Executes `SELECT 1`; returns 200 when PostgreSQL is reachable, otherwise 503 |
 | `POST` | `/api/v1/links` | Creates an automatically generated or custom alias; returns 201 |
@@ -76,7 +77,7 @@ RETURNING original_url;
 
 ## Vertical Implementation Slices
 
-### 1. Bootstrap, `/health`, CI, and First Deployment — 30–40 minutes
+### 1. Bootstrap, `/health`, CI, and First Deployment — 25–30 minutes
 
 - Initialize Git and a minimal `app/` package with the FastAPI application, `/health`, settings, and an application factory only where needed for tests.
 - Add `pyproject.toml`, `uv.lock`, and `.python-version` pinned to Python 3.12.13. DigitalOcean currently supports `uv` projects directly through its Python buildpack, so no Dockerfile is needed. [DigitalOcean Python buildpack](https://docs.digitalocean.com/products/app-platform/reference/buildpacks/python/)
@@ -89,7 +90,7 @@ RETURNING original_url;
 
 Acceptance: local and CI tests pass, and the public DigitalOcean URL returns 200 from `/health`.
 
-### 2. PostgreSQL Foundation and Alembic — 35–40 minutes
+### 2. PostgreSQL Foundation and Alembic — 30–35 minutes
 
 - Add SQLAlchemy 2.x, Psycopg 3, session dependency, configuration validation, and the `short_links` model.
 - Normalize DigitalOcean’s PostgreSQL URL to SQLAlchemy’s `postgresql+psycopg://` driver form.
@@ -100,7 +101,7 @@ Acceptance: local and CI tests pass, and the public DigitalOcean URL returns 200
 
 Acceptance: migrations upgrade an empty PostgreSQL database, `/ready` reflects database availability, and deployment runs migrations before accepting traffic.
 
-### 3. Create Short Links — 30–35 minutes
+### 3. Create Short Links — 25–30 minutes
 
 - Add request/response schemas and `POST /api/v1/links`.
 - Add the small pure alias-generation function and collision retry loop; keep persistence directly in the endpoint/helper rather than introducing repository and service class layers.
@@ -109,7 +110,7 @@ Acceptance: migrations upgrade an empty PostgreSQL database, `/ready` reflects d
 
 Acceptance: valid links persist and return usable short URLs; invalid input returns 422 and occupied custom aliases return 409.
 
-### 4. Retrieve Metadata — 15–20 minutes
+### 4. Retrieve Metadata — 10–15 minutes
 
 - Add `GET /api/v1/links/{alias}` using the indexed alias lookup.
 - Return the same stable response schema as creation.
@@ -117,7 +118,7 @@ Acceptance: valid links persist and return usable short URLs; invalid input retu
 
 Acceptance: metadata remains consistent with the creation response and unknown aliases return 404.
 
-### 5. Redirect and Analytics — 20–25 minutes
+### 5. Redirect and Analytics — 15–20 minutes
 
 - Register `GET /{alias}` last so named health and API routes retain precedence.
 - Use the atomic `UPDATE ... RETURNING` operation to increment `click_count`, set `last_accessed_at`, and fetch the destination in one database round trip.
@@ -126,7 +127,17 @@ Acceptance: metadata remains consistent with the creation response and unknown a
 
 Acceptance: every request increments the counter exactly once before redirecting.
 
-### 6. Final Production Pass — 20–30 minutes
+### 6. Minimal UI — 20–25 minutes
+
+- Serve a responsive `app/static/index.html` from `GET /`, with small colocated or separate vanilla CSS and JavaScript assets; add no UI framework, template engine, or frontend build step.
+- Provide a labeled long-URL field, optional custom-alias field, submit button, inline loading/error state, and a success panel showing the short URL with open and copy actions.
+- Submit JSON to `POST /api/v1/links` with `fetch`, omit an empty custom alias, and display FastAPI validation/conflict messages without exposing stack traces.
+- Use semantic HTML, keyboard-accessible controls, visible focus states, mobile-friendly layout, and a live status region for submission feedback.
+- Keep the UI creation-only; metadata remains available through the API and generated short links exercise the redirect route.
+
+Acceptance: a user can create, copy, and open a short URL from a phone or desktop without a page reload, and API errors are shown clearly.
+
+### 7. Final Production Pass — 15–20 minutes
 
 - Run migrations, Ruff, and the full integration suite against PostgreSQL 17 in CI; also run `alembic check` to catch model/migration drift.
 - Add a concise README containing local setup, commands, API examples, environment variables, migration workflow, DigitalOcean/GitHub prerequisites, smoke tests, and teardown guidance.
@@ -148,11 +159,13 @@ Required scenarios:
 - Redirect returns 307 and the exact destination.
 - Multiple redirects atomically increment `click_count` and update `last_accessed_at`.
 - `short_url` always uses configured `PUBLIC_BASE_URL`.
+- `/` serves the UI, its form submits the documented request shape, empty custom aliases are omitted, and success/error states render safely using text content rather than injected HTML.
 
 ## Assumptions and Deliberate Limits
 
 - Creation and metadata are public, with no authentication or rate limiting, as requested. Document both as the first hardening additions for an internet-scale public service.
 - Basic click count and last-access time are included; individual visit events, IP addresses, and user agents are not stored.
+- The UI is a creation convenience only and uses vanilla browser APIs; there is no frontend framework, template engine, Node.js dependency, or separate frontend deployment.
 - No link editing, deletion, expiration, custom domains, bulk APIs, or URL deduplication.
 - A single managed PostgreSQL cluster is the only stateful component. No Redis/cache is warranted for this scope.
 - Begin with one service instance; the design remains horizontally safe because collision handling and click increments are enforced atomically by PostgreSQL.

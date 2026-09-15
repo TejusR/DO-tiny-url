@@ -2,7 +2,8 @@ import logging
 from typing import Annotated
 
 from fastapi import Depends, FastAPI, HTTPException, Response, status
-from sqlalchemy import select, text
+from fastapi.responses import RedirectResponse
+from sqlalchemy import func, select, text, update
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session
 
@@ -102,6 +103,33 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             )
 
         return _response_for(link, resolved_settings.public_base_url)
+
+    @application.get("/{alias}", status_code=status.HTTP_307_TEMPORARY_REDIRECT)
+    def follow_short_link(
+        alias: str,
+        session: Annotated[Session, Depends(get_session)],
+    ) -> RedirectResponse:
+        destination = session.scalar(
+            update(ShortLink)
+            .where(ShortLink.alias == alias)
+            .values(
+                click_count=ShortLink.click_count + 1,
+                last_accessed_at=func.now(),
+            )
+            .returning(ShortLink.original_url)
+        )
+        if destination is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Short link not found",
+            )
+
+        session.commit()
+        return RedirectResponse(
+            url=destination,
+            status_code=status.HTTP_307_TEMPORARY_REDIRECT,
+            headers={"Cache-Control": "no-store"},
+        )
 
     return application
 
