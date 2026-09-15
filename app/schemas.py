@@ -13,7 +13,7 @@ HttpUrlValidator = TypeAdapter(AnyHttpUrl)
 
 class ShortLinkCreate(BaseModel):
     url: Annotated[str, Field(min_length=1, max_length=MAX_URL_LENGTH)]
-    custom_alias: Annotated[str | None, Field(pattern=ALIAS_PATTERN)] = None
+    custom_alias: Annotated[str | None, Field(min_length=3, pattern=ALIAS_PATTERN)] = None
 
     @field_validator("url")
     @classmethod

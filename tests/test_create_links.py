@@ -71,6 +71,7 @@ def test_creates_custom_alias(client: TestClient) -> None:
         ("https:///missing-host", None),
         ("https://example.com/has a space", None),
         ("https://example.com", "UPPER"),
+        ("https://example.com", "a"),
         ("https://example.com", "ab"),
         ("https://example.com", "-starts-wrong"),
         ("https://example.com", "ends-wrong-"),
