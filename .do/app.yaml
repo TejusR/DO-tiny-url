@@ -1,0 +1,28 @@
+name: tiny-url
+region: nyc
+
+alerts:
+  - rule: DEPLOYMENT_FAILED
+
+ingress:
+  rules:
+    - component:
+        name: api
+      match:
+        path:
+          prefix: /
+
+services:
+  - name: api
+    environment_slug: python
+    github:
+      repo: TejusR/DO-tiny-url
+      branch: main
+      deploy_on_push: false
+    source_dir: /
+    instance_count: 1
+    instance_size_slug: basic-xxs
+    http_port: 8080
+    run_command: uv run uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    health_check:
+      http_path: /health
