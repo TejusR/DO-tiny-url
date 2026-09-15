@@ -11,6 +11,22 @@ jobs:
   test:
     name: Lint and test
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: tiny_url
+          POSTGRES_USER: tiny_url
+          POSTGRES_PASSWORD: tiny_url
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U tiny_url -d tiny_url"
+          --health-interval 2s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://tiny_url:tiny_url@localhost:5432/tiny_url
     steps:
       - name: Check out repository
         uses: actions/checkout@v5
@@ -29,6 +45,12 @@ jobs:
 
       - name: Check formatting
         run: uv run ruff format --check .
+
+      - name: Run database migrations
+        run: uv run alembic upgrade head
+
+      - name: Check model and migration consistency
+        run: uv run alembic check
 
       - name: Test
         run: uv run pytest

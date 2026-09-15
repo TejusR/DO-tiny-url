@@ -4,6 +4,18 @@ region: nyc
 alerts:
   - rule: DEPLOYMENT_FAILED
 
+databases:
+  - name: tiny-url-db
+    engine: PG
+    production: true
+    cluster_name: tiny-url-db
+
+envs:
+  - key: DATABASE_URL
+    scope: RUN_AND_BUILD_TIME
+    type: GENERAL
+    value: ${tiny-url-db.DATABASE_PRIVATE_URL}
+
 ingress:
   rules:
     - component:
@@ -25,4 +37,17 @@ services:
     http_port: 8080
     run_command: uv run uvicorn app.main:app --host 0.0.0.0 --port $PORT
     health_check:
+      http_path: /ready
+    liveness_health_check:
       http_path: /health
+
+jobs:
+  - name: migrate
+    kind: PRE_DEPLOY
+    environment_slug: python
+    github:
+      repo: TejusR/DO-tiny-url
+      branch: main
+      deploy_on_push: false
+    source_dir: /
+    run_command: uv run alembic upgrade head
