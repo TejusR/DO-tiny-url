@@ -35,7 +35,7 @@ services:
     instance_count: 1
     instance_size_slug: basic-xxs
     http_port: 8080
-    run_command: uv run uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    run_command: python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT
     health_check:
       http_path: /ready
     liveness_health_check:
@@ -50,4 +50,4 @@ jobs:
       branch: main
       deploy_on_push: false
     source_dir: /
-    run_command: uv run alembic upgrade head
+    run_command: python -m alembic upgrade head

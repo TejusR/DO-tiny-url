@@ -2,7 +2,7 @@ import logging
 from typing import Annotated
 
 from fastapi import Depends, FastAPI, HTTPException, Response, status
-from sqlalchemy import text
+from sqlalchemy import select, text
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session
 
@@ -88,6 +88,20 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Could not generate a unique alias",
         )
+
+    @application.get("/api/v1/links/{alias}", response_model=ShortLinkResponse)
+    def get_short_link(
+        alias: str,
+        session: Annotated[Session, Depends(get_session)],
+    ) -> ShortLinkResponse:
+        link = session.scalar(select(ShortLink).where(ShortLink.alias == alias))
+        if link is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Short link not found",
+            )
+
+        return _response_for(link, resolved_settings.public_base_url)
 
     return application
 
