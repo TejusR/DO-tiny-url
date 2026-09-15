@@ -75,6 +75,83 @@
             <a id="open-link" class="open-button" href="#" target="_blank" rel="noopener noreferrer">Open</a>
           </div>
         </section>
+
+        <section class="analytics" aria-labelledby="analytics-title">
+          <div class="section-heading">
+            <span class="eyebrow">Analytics</span>
+            <h2 id="analytics-title">See how your link is doing.</h2>
+            <p>Enter its alias to view total clicks and recent activity.</p>
+          </div>
+
+          <form id="analytics-form" novalidate>
+            <div class="field">
+              <label for="analytics-alias">Link alias</label>
+              <div class="analytics-controls">
+                <div class="alias-input">
+                  <span aria-hidden="true">/</span>
+                  <input
+                    id="analytics-alias"
+                    name="analytics_alias"
+                    type="text"
+                    autocomplete="off"
+                    autocapitalize="none"
+                    spellcheck="false"
+                    placeholder="my-link"
+                    minlength="3"
+                    maxlength="32"
+                    pattern="[a-z0-9](?:[a-z0-9-]{1,30}[a-z0-9])?"
+                    required
+                  >
+                </div>
+                <button id="analytics-button" class="secondary" type="submit">
+                  <span class="button-label">View analytics</span>
+                  <span class="spinner dark" aria-hidden="true"></span>
+                </button>
+              </div>
+            </div>
+          </form>
+
+          <p id="analytics-status" class="status" role="status" aria-live="polite"></p>
+
+          <section
+            id="analytics-panel"
+            class="analytics-panel"
+            aria-labelledby="analytics-result-title"
+            tabindex="-1"
+            hidden
+          >
+            <div class="analytics-summary">
+              <div>
+                <p class="result-label">Short link</p>
+                <a
+                  id="analytics-short-url"
+                  class="short-url"
+                  href="#"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                ></a>
+              </div>
+              <div class="click-total">
+                <strong id="click-count">0</strong>
+                <span id="analytics-result-title">Total clicks</span>
+              </div>
+            </div>
+            <dl class="analytics-details">
+              <div>
+                <dt>Created</dt>
+                <dd id="created-at">—</dd>
+              </div>
+              <div>
+                <dt>Last opened</dt>
+                <dd id="last-accessed-at">—</dd>
+              </div>
+              <div>
+                <dt>Destination</dt>
+                <dd id="original-url">—</dd>
+              </div>
+            </dl>
+          </section>
+        </section>
       </section>
     </main>
   </body>

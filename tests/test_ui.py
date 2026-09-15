@@ -17,6 +17,10 @@ def test_root_serves_creation_interface() -> None:
     assert 'role="status"' in response.text
     assert 'id="copy-button"' in response.text
     assert 'id="open-link"' in response.text
+    assert '<form id="analytics-form"' in response.text
+    assert 'name="analytics_alias"' in response.text
+    assert 'id="click-count"' in response.text
+    assert 'id="last-accessed-at"' in response.text
 
 
 def test_ui_assets_are_served() -> None:
@@ -30,5 +34,7 @@ def test_ui_assets_are_served() -> None:
     assert script.status_code == 200
     assert 'fetch("/api/v1/links"' in script.text
     assert "payload.custom_alias = customAlias" in script.text
+    assert "fetch(`/api/v1/links/${encodeURIComponent(alias)}`)" in script.text
+    assert "data.click_count" in script.text
     assert "textContent" in script.text
     assert "innerHTML" not in script.text
